@@ -38,16 +38,14 @@
 //   console.log(`Server is running on port ${PORT}`);
 // });
 
-
-
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -76,13 +74,14 @@ const users = [];
 // Routes
 
 // Register Route
-app.post('/api/register', async (req, res) => {
+app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   // Check if user already exists
-  const existingUser = users.find(user => user.email === email);
+  const existingUser = users.find((user) => user.email === email);
   if (existingUser) {
-    return res.status(400).json({ message: 'User already exists' });
+    return res.status(400).json({ message: "User already exists" });
   }
 
   // Hash password
@@ -90,45 +89,50 @@ app.post('/api/register', async (req, res) => {
 
   // Save user
   const user = { email, password: hashedPassword };
-  users.push(user);
+  console.log(email, password);
 
-  res.status(201).json({ message: 'User registered successfully' });
+  await users.push(user);
+  console.log(user);
+
+  res.status(201).json({ message: "User registered successfully" });
 });
 
 // Login Route
-app.post('/api/login', async (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
 
   // Find user by email
-  const user = users.find(user => user.email === email);
+  const user = users.find((user) => user.email === email);
   if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
+    return res.status(400).json({ message: "Invalid credentials" });
   }
 
   // Compare passwords
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    return res.status(400).json({ message: 'Invalid credentials' });
+    return res.status(400).json({ message: "Invalid credentials" });
   }
 
   // Generate JWT token
-  const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+  const token = jwt.sign({ email: user.email }, JWT_SECRET, {
+    expiresIn: "1h",
+  });
 
   res.json({ token });
 });
 
 // Protected route (requires authentication)
-app.get('/api/protected', (req, res) => {
-  const token = req.headers['authorization'];
+app.get("/api/protected", (req, res) => {
+  const token = req.headers["authorization"];
   if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
+    return res.status(401).json({ message: "No token provided" });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    res.json({ message: 'Access granted', user: decoded });
+    res.json({ message: "Access granted", user: decoded });
   } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(401).json({ message: "Invalid token" });
   }
 });
 
@@ -149,4 +153,3 @@ app.use("/api/dashboard", dashboardRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
