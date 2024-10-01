@@ -15,19 +15,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Function to generate the next serial number
+const generateSerialNumber = async () => {
+  const lastProduct = await Product.findOne().sort({ serialNumber: -1 });
+  return lastProduct ? lastProduct.serialNumber + 1 : 1;
+};
+
+// POST route to add a new product
 // POST route to add a new product
 router.post("/product", upload.single("image"), async (req, res) => {
   try {
-    const { serialNumber, name, category } = req.body;
+    const { category, title, description } = req.body;
     const newProduct = new Product({
-      serialNumber,
-      name,
       category,
+      title,
+      description,
       imageUrl: `/uploads/${req.file.filename}`,
     });
     await newProduct.save();
     res.status(201).json({ message: "Product added successfully", newProduct });
   } catch (err) {
+    console.log(err);
+
     res.status(500).json({ message: "Failed to add product", error: err });
   }
 });
@@ -35,8 +44,8 @@ router.post("/product", upload.single("image"), async (req, res) => {
 // PUT route to update product by ID
 router.put("/product/:id", upload.single("image"), async (req, res) => {
   try {
-    const { serialNumber, name, category } = req.body;
-    const updatedData = { serialNumber, name, category };
+    const { category, title, description } = req.body;
+    const updatedData = { category, title, description };
 
     if (req.file) {
       updatedData.imageUrl = `/uploads/${req.file.filename}`;
@@ -78,7 +87,7 @@ router.delete("/product/:id", async (req, res) => {
 // GET route to fetch all products
 router.get("/product", async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().populate("category");
     res.status(200).json(products);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch products", error: err });

@@ -1,25 +1,30 @@
 const mongoose = require("mongoose");
 
-const ProductSchema = new mongoose.Schema(
-  {
-    serialNumber: {
-      type: String,
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    category: {
-      type: String,
-      required: true,
-    },
-    imageUrl: {
-      type: String,
-    },
+// Define the product schema
+const productSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+    required: true,
   },
-  { timestamps: true }
-);
+  description: { type: String, required: true },
+  imageUrl: { type: String, required: true },
+  serialNumber: { type: Number, unique: false }, // Ensure it's unique
+});
 
-const Product = mongoose.model("Product", ProductSchema);
+// Pre-save hook to assign serialNumber if null
+productSchema.pre("save", async function (next) {
+  if (this.isNew && !this.serialNumber) {
+    // Find the highest serialNumber in the collection and assign the next number
+    const lastProduct = await this.constructor
+      .findOne()
+      .sort({ serialNumber: -1 });
+    this.serialNumber = lastProduct ? lastProduct.serialNumber + 1 : 1;
+  }
+  next();
+});
+
+const Product = mongoose.model("Product", productSchema);
+
 module.exports = Product;
